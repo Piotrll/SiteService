@@ -38,6 +38,7 @@ class Controler:
         initWindow.drawActionButtons()
         initWindow.buildTreeView()
         initWindow.insertDataToTreeView()
+        initWindow.startup()
         print("Main window initialized.")
         return True
 

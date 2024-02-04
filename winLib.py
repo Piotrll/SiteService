@@ -18,31 +18,46 @@ class MainWin:
         # Background is gray, writing cursor is white
 
         self.root = tk.Tk()
-        self.root.title("Serwis")
+        self.root.title("Kapeo Serwis")
         self.root.geometry("1280x720")
         self.root.resizable(False, False)
-        self.root.configure(bg = "gray")
+        self.root.config(bg="#333333")
 
-        self.mainFrame = tk.Frame(self.root, bg = "gray")
-        self.mainFrame.pack()
-        self.label1 = tk.Label(self.mainFrame, text="Serwis", bg = "gray", fg = "white", font = ("Arial", 24))
-        self.label1.grid(column=0, row=0, columnspan=3, pady=10)
+        self.label1 = tk.LabelFrame(self.root, text="Serwis", bg="#333333", fg="#ffffff", font=("Arial", 16, "bold"), bd=5, relief=tk.FLAT)
+        self.label1.pack(side=tk.TOP, fill=tk.X, expand=False, padx=10, pady=10)
+        self.treeFrame = tk.Frame(self.root, bg = "gray")
+        self.treeFrame.pack(fill=tk.BOTH, expand=True)
     
     def startup(self):
         self.root.mainloop()
 
     def drawActionButtons(self):
-        self.button1 = tk.Button(self.mainFrame, text="Import", command=self.runtimeImport, bg = "gray", fg = "white", font = ("Arial", 16))
-        self.button1.grid(column=0, row=1, padx=10, pady=10)
-        self.button2 = tk.Button(self.mainFrame, text="Excel", command=self.makeExcel, bg = "gray", fg = "white", font = ("Arial", 16))
-        self.button2.grid(column=1, row=1, padx=10, pady=10)
-        self.button3 = tk.Button(self.mainFrame, text="Odśwież", command=self.refreshData, bg = "gray", fg = "white", font = ("Arial", 16))
-        self.button3.grid(column=2, row=1, padx=10, pady=10)
+        self.button1 = tk.Button(self.label1,command=self.runtimeImport, text="Import",
+                                 activebackground="red", bg="#993333", fg="#ffffff", 
+                                 font=("Arial", 16, "bold"), bd=5, relief=tk.FLAT,)
+        self.button1.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=10, pady=10)
+
+        self.button2 = tk.Button(self.label1,command=self.makeExcel, text="Excel",
+                                 activebackground="red", bg="#993333", fg="#ffffff",
+                                 font=("Arial", 16, "bold"), bd=5, relief=tk.FLAT,)
+        self.button2.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=10, pady=10)
+
+        self.button3 = tk.Button(self.label1, text="Odśwież",activebackground="red", 
+                                 bg="#993333", fg="#ffffff", font=("Arial", 16, "bold"), 
+                                 bd=5, relief=tk.FLAT, command=self.refreshData)
+        self.button3.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=10, pady=10)
 
     def buildTreeView(self):
-        self.treeView = ttk.Treeview(self.mainFrame)
-        self.treeView.grid(column=0, row=2, columnspan=3, padx=10, pady=10)
+        self.treeView = ttk.Treeview(self.treeFrame, selectmode="browse", columns=("Serwis", "Obiekt", "Usterki"))
+        self.treeView.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=10)
         self.treeView["columns"] = ("Serwis", "Obiekt", "Usterki")
+        self.treeView['show'] = 'headings'
+        self.treeView.column("Serwis", width=10, anchor="center")
+        self.treeView.column("Obiekt", width=100, anchor="center")
+        self.treeView.column("Usterki", width=100, anchor="center")
+        self.treeView.heading("Serwis", text="Serwis")
+        self.treeView.heading("Obiekt", text="Obiekt")
+        self.treeView.heading("Usterki", text="Usterki")
 
     def insertDataToTreeView(self):
         for item in self.memory.mainDataList:
@@ -53,8 +68,18 @@ class MainWin:
             else:
                 issueCount = len(self.memory.issuesDict[item[0]+"."+item[1]])
                 self.treeView.insert("", "end", text=item[0], values=(item[0], item[1], issueCount))
+
+    def flushTreeView(self):
+        for item in self.treeView.get_children():
+            self.treeView.delete(item)
+
     def runtimeImport(self):
         self.configHandle.dataDirPath = filedialog.askdirectory()
+        self.configHandle.saveDataDirectory()
+        self.memory.loadData()
+        self.memory.loadIssues()
+        self.flushTreeView()
+        self.insertDataToTreeView()
 
     def makeExcel(self):
         pass
