@@ -13,16 +13,20 @@ class Memory:
         self.issuesDict = {}
         self.actualDataView = []
         self.rawSiteNames = []
+        
     def loadData(self):
         self.flushData()
         
         dataList = os.listdir(self.configHandle.dataDirPath)
         tempList = []
+
         for item in dataList:
-            if not os.path.isdir(item):
+            if not os.path.isdir(os.path.join(self.configHandle.dataDirPath, item)):
                 continue
             self.rawSiteNames.append(item)
-            if item.index(".") > 5:
+            if not "." in item:
+                tempList.append(item)
+            elif item.index(".") > 5:
                 temp = item
                 tempList.append(temp)
             else:
@@ -40,6 +44,8 @@ class Memory:
 
         issuesFolder = self.configHandle.configReader.readConfig("DataInfo", "issueFolderName")
         for item in self.rawSiteNames:
+            if not os.path.exists(issuesFolder):
+                os.mkdir(issuesFolder)
             os.chdir(issuesFolder)
             issuesHere = os.listdir()
             tempList = []

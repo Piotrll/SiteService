@@ -46,11 +46,13 @@ class MainWin:
 
     def insertDataToTreeView(self):
         for item in self.memory.mainDataList:
+            
             if len(item) == 1:
                 issueCount = len(self.memory.issuesDict[item[0]])
+                self.treeView.insert("", "end", text=item, values=("", item[0], issueCount))
             else:
-                issueCount = len(self.memory.issuesDict[item[1]])
-            self.treeView.insert("", "end", text=item[0], values=(item[0], item[1]))
+                issueCount = len(self.memory.issuesDict[item[0]+"."+item[1]])
+                self.treeView.insert("", "end", text=item[0], values=(item[0], item[1], issueCount))
     def runtimeImport(self):
         self.configHandle.dataDirPath = filedialog.askdirectory()
 

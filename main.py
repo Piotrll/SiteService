@@ -38,6 +38,8 @@ class Controler:
         initWindow.drawActionButtons()
         initWindow.buildTreeView()
         initWindow.insertDataToTreeView()
+        print("Main window initialized.")
+        return True
 
 if __name__ == "__main__":
     controler = Controler()
