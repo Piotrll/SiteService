@@ -13,13 +13,13 @@ class Controler:
 
         if not self.startup():
             print("Startup failed.")
-            sys.exit(1)
+            sys.exit()
 
     def startup(self):
 
         # Initialize configuration
         print("Initializing configuration...")
-        configHandle = conf.configHandle(self)
+        configHandle = conf.ConfigHandle(self)
         if not configHandle.startupSequence():
             return False
         print("Configuration initialized.")
@@ -27,3 +27,6 @@ class Controler:
         # Initialize main window
         print("Initializing main window...")
         initWindow = winLib.initWindow(controler = self, configHandle = configHandle)
+
+if __name__ == "__main__":
+    controler = Controler()

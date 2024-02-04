@@ -13,22 +13,42 @@ class ConfigHandle:
         self.configReader = cReader(self)
         self.configChecker = cChecker(self)
         self.noConfigData = False
-
+        self.dataDir = None
+        self.dataDirPath = None
     def startupSequence(self):
         match self.configChecker.initCheck():
             case 0:
                 pass
-            case 1:
+            case 1 | 2:
                 self.noConfigData = True
-            case 2:
+            case 3:
                 print("Error initializing configuration.")
                 return False
         if self.noConfigData:
             winLib.askInitImport(self, self.controler)
+        else:
+            self.loadDataDirectory()
+        print("Configuration startup sequence completed.")
+        return True
+    def saveDataDirectory(self):
+        self.configWriter.writeConfig("DataInfo", "dataPath", self.dataDirPath)
+    def loadDataDirectory(self):
+        self.dataDirPath = self.configReader.readConfig("DataInfo", "dataPath")
+        self.dataDir = os.path.basename(self.dataDirPath)
+
 
 class cWriter:
     def __init__(self, configHandle):
         self.configHandle = configHandle
+
+    def writeConfig(self, section, option, value):
+        os.chdir(os.path.join(self.configHandle.controler.globalCwd, "config"))
+        configHandle = cp.ConfigParser()
+        configHandle.read("config.ini")
+        configHandle[section][option] = value
+        with open("config.ini", "w") as configFile:
+            configHandle.write(configFile)
+        return True
 
     def writeInitConfig(self):
         initialConfigStructure = {
@@ -54,18 +74,24 @@ class cReader:
     def __init__(self, configHandle):
         self.configHandle = configHandle
 
-    def readConfig(self):
-        pass
+    def readConfig(self, section, option):
+        os.chdir(os.path.join(self.configHandle.controler.globalCwd, "config"))
+        tempHandle = cp.ConfigParser()
+        tempHandle.read("config.ini")
+        return tempHandle[section][option]
 
 class cChecker:
     def __init__(self, configHandle):
         self.configHandle = configHandle
         self.res = True
-    def initCheck(self): # returns 0 if config directory exists, 1 if config file exists, 2 if error
+    def initCheck(self): # returns 0 if config exists, 1 if config exist but have no data, 2 if config was created, 3 if error
 
         os.chdir(self.configHandle.controler.globalCwd)
         if os.path.exists("config"):
             print("Config directory exists.")
+            if not os.path.exists(self.configHandle.configReader.readConfig("DataInfo", "dataPath")):
+                print("Data directory does not exist.")
+                return 1
             return 0
         else:
             print("Config directory does not exist.")
@@ -81,6 +107,6 @@ class cChecker:
                 print("Config file created.")
             else:
                 print("Error creating config file.")
-                return 2
+                return 3
             print("Config file created.")
-        return 1
+        return 2
