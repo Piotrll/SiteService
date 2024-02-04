@@ -30,6 +30,7 @@ class ConfigHandle:
             self.loadDataDirectory()
         print("Configuration startup sequence completed.")
         return True
+    
     def saveDataDirectory(self):
         self.configWriter.writeConfig("DataInfo", "dataPath", self.dataDirPath)
     def loadDataDirectory(self):

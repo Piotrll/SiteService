@@ -3,13 +3,14 @@ from tkinter import ttk
 from tkinter import messagebox
 from tkinter import filedialog
 import os, sys, shutil, time
-import winLib, conf
+import winLib, conf, tmpMem
 
 class Controler:
     def __init__(self):
         self.globalCwd = os.getcwd()
         self.configHandle = None
         self.initWindow = None
+        self.memory = None
 
         if not self.startup():
             print("Startup failed.")
@@ -24,9 +25,19 @@ class Controler:
             return False
         print("Configuration initialized.")
 
+        # Initialize memory
+        self.memory = tmpMem.Memory(self, configHandle)
+        self.memory.loadData()
+        self.memory.loadIssues()
+        self.memory.solidifyData()
+
         # Initialize main window
         print("Initializing main window...")
-        initWindow = winLib.initWindow(controler = self, configHandle = configHandle)
+        initWindow = winLib.MainWin(controler = self, configHandle = configHandle, memory = self.memory)
+        initWindow.buildWindow()
+        initWindow.drawActionButtons()
+        initWindow.buildTreeView()
+        initWindow.insertDataToTreeView()
 
 if __name__ == "__main__":
     controler = Controler()
