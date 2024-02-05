@@ -15,6 +15,8 @@ class ConfigHandle:
         self.noConfigData = False
         self.dataDir = None
         self.dataDirPath = None
+        self.issueFolderName = None
+        self.issueArchiveFolderName = None
     def startupSequence(self):
         match self.configChecker.initCheck():
             case 0:
@@ -36,6 +38,8 @@ class ConfigHandle:
     def loadDataDirectory(self):
         self.dataDirPath = self.configReader.readConfig("DataInfo", "dataPath")
         self.dataDir = os.path.basename(self.dataDirPath)
+        self.issueFolderName = self.configReader.readConfig("DataInfo", "issuefoldername")
+        self.issueArchiveFolderName = self.configReader.readConfig("DataInfo", "issuearchivefoldername")
 
 
 class cWriter:

@@ -10,6 +10,7 @@ class Controler:
         self.globalCwd = os.getcwd()
         self.configHandle = None
         self.initWindow = None
+        self.issueWindow = None
         self.memory = None
 
         if not self.startup():
@@ -20,26 +21,32 @@ class Controler:
 
         # Initialize configuration
         print("Initializing configuration...")
-        configHandle = conf.ConfigHandle(self)
-        if not configHandle.startupSequence():
+        self.configHandle = conf.ConfigHandle(self)
+        if not self.configHandle.startupSequence():
             return False
         print("Configuration initialized.")
 
         # Initialize memory
-        self.memory = tmpMem.Memory(self, configHandle)
+        self.memory = tmpMem.Memory(self, self.configHandle)
         self.memory.loadData()
         self.memory.loadIssues()
         self.memory.solidifyData()
 
         # Initialize main window
         print("Initializing main window...")
-        initWindow = winLib.MainWin(controler = self, configHandle = configHandle, memory = self.memory)
-        initWindow.buildWindow()
-        initWindow.drawActionButtons()
-        initWindow.buildTreeView()
-        initWindow.insertDataToTreeView()
-        initWindow.startup()
-        print("Main window initialized.")
+        self.initWindow = winLib.MainWin(controler = self, configHandle = self.configHandle, memory = self.memory)
+        self.initWindow.buildWindow()
+        self.initWindow.drawActionButtons()
+        self.initWindow.buildTreeView()
+        self.initWindow.drawSearchBar()
+        self.initWindow.insertDataToTreeView()
+        self.initWindow.buildContextMenu()
+        self.initWindow.binder()
+
+        # Initialize issue window
+        self.issueWindow = winLib.IssueWin(controler = self, configHandle = self.configHandle, memory = self.memory, mainWin = self.initWindow)
+
+        self.initWindow.startup()
         return True
 
 if __name__ == "__main__":

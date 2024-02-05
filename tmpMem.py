@@ -43,14 +43,18 @@ class Memory:
         os.chdir(self.controler.globalCwd)
 
         issuesFolder = self.configHandle.configReader.readConfig("DataInfo", "issueFolderName")
+
         for item in self.rawSiteNames:
+            os.chdir(self.configHandle.dataDirPath + '/' + item)
             if not os.path.exists(issuesFolder):
                 os.mkdir(issuesFolder)
-            os.chdir(issuesFolder)
-            issuesHere = os.listdir()
+
+            os.chdir(self.configHandle.dataDirPath + '/' + item )
+            issuesHere = os.listdir(self.configHandle.dataDirPath + '/' + item + '/' + issuesFolder)
+            path = self.configHandle.dataDirPath + '/' + item + '/' + issuesFolder
             tempList = []
             for issue in issuesHere:
-                if os.path.isfile(issue):
+                if os.path.isfile(path + '/' + issue):
                     tempList.append(issue)
             self.issuesDict[item] = tempList
             print(f"Loading issues for {item} - {tempList}")
