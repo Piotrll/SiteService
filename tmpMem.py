@@ -8,12 +8,16 @@ class Memory:
     def __init__(self, controler, configHandle):
         self.controler = controler
         self.configHandle = configHandle
-
+        self.loadWin = None
         self.mainDataList = []
         self.issuesDict = {}
         self.actualDataView = []
         self.rawSiteNames = []
-        
+        self.mainWin = None
+    
+    def setMainWin(self, mainWin):
+        self.mainWin = mainWin
+
     def loadData(self):
         self.flushData()
         
@@ -21,6 +25,7 @@ class Memory:
         tempList = []
 
         for item in dataList:
+
             if not os.path.isdir(os.path.join(self.configHandle.dataDirPath, item)):
                 continue
             self.rawSiteNames.append(item)
@@ -44,7 +49,9 @@ class Memory:
 
         issuesFolder = self.configHandle.configReader.readConfig("DataInfo", "issueFolderName")
 
-        for item in self.rawSiteNames:
+        for i, item in enumerate(self.rawSiteNames):
+
+
             os.chdir(self.configHandle.dataDirPath + '/' + item)
             if not os.path.exists(issuesFolder):
                 os.mkdir(issuesFolder)
@@ -60,7 +67,7 @@ class Memory:
             print(f"Loading issues for {item} - {tempList}")
             os.chdir(self.controler.globalCwd)
         print("Issues loaded.")
-                
+
     def solidifyData(self):
         os.chdir(self.controler.globalCwd)
         if not os.path.exists("backup"):
@@ -79,3 +86,4 @@ class Memory:
 
     def solidifyData(self):
         pass
+

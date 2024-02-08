@@ -42,7 +42,7 @@ class Controler:
         self.initWindow.insertDataToTreeView()
         self.initWindow.buildContextMenu()
         self.initWindow.binder()
-
+        
         # Initialize issue window
         self.issueWindow = winLib.IssueWin(controler = self, configHandle = self.configHandle, memory = self.memory, mainWin = self.initWindow)
 

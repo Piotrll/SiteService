@@ -117,6 +117,10 @@ class MainWin:
 
     def editSite(self):
         editWindow = EditWindow(self, self.configHandle, self.memory)
+        editWindow.buildWindow()
+        editWindow.drawWidgets()
+        editWindow.binder()
+        editWindow.loadInName()
 
     def addSite(self):
         pass
@@ -201,10 +205,10 @@ class MainWin:
         pass
 
     def refreshData(self):
+        self.flushTreeView()
         self.memory.flushData()
         self.memory.loadData()
         self.memory.loadIssues()
-        self.flushTreeView()
         self.insertDataToTreeView()
 
     # Deep private methods -------------------------------------------------------------
@@ -250,12 +254,12 @@ class IssueWin:
         self.button1 = tk.Button(self.label1, text="Dodaj", activebackground="red", 
                                  bg="#993333", fg="#ffffff", font=("Arial", 16, "bold"), 
                                  bd=5, relief=tk.FLAT, command=self.addIssue)
-        self.button1.pack(side=tk.RIGHT, fill=tk.X, expand=False, padx=10, pady=10)
+        self.button1.pack(side=tk.RIGHT, fill=tk.X, expand=True, padx=10, pady=10)
 
         self.button2 = tk.Button(self.label1, text="Odśwież i zamknij", activebackground="red", 
                                  bg="#993333", fg="#ffffff", font=("Arial", 16, "bold"), 
                                  bd=5, relief=tk.FLAT, command=self.closeWindow)
-        self.button2.pack(side=tk.RIGHT, fill=tk.X, expand=False, padx=10, pady=10)
+        self.button2.pack(side=tk.RIGHT, fill=tk.X, expand=True, padx=10, pady=10)
 
     def binder(self):
         self.root.bind("WM_DELETE_WINDOW", self.closeWindow)
@@ -274,9 +278,9 @@ class IssueWin:
     def prepareSiteName(self):
         selected = self.mainWin.treeView.selection()[0]
         item = self.mainWin.treeView.item(selected)
-        if len(item['values']) < 3:
-            value = str(item['values'][0])
-        elif len(item['values']) == 3:
+        if item['values'][0] == "":
+            value = str(item['values'][1])
+        elif item['values'][0] != "":
             value = str(item['values'][0]) + "." + str(item['values'][1])
         self.siteName = value
 
@@ -352,13 +356,13 @@ class NewIssueWin:
                                     relief=tk.FLAT)
         self.label1.pack(side=tk.TOP, fill=tk.X, expand=False, padx=10, pady=10)
 
-        self.entry1 = tk.Entry(self.label1, bg="#333333", fg="#ffffff", 
+        self.entry1 = tk.Entry(self.label1, bg="#ffffff", fg="#000000", 
                               font=("Arial", 16, "bold"), bd=5, 
-                              relief=tk.FLAT, textvariable = self.issueName)
+                              textvariable = self.issueName)
         self.entry1.pack(side=tk.TOP, fill=tk.X, expand=True, padx=10, pady=10)
 
-        self.entry2 = tk.Text(self.root, bg="#333333", fg="#ffffff", 
-                             font=("Arial", 16, "bold"), bd=5, relief=tk.FLAT)
+        self.entry2 = tk.Text(self.root, bg="#ffffff", fg="#000000", 
+                             font=("Arial", 14, "bold"), bd=5)
         self.entry2.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         self.button1 = tk.Button(self.label1, text="Dodaj", activebackground="red", 
@@ -473,6 +477,10 @@ class EditWindow:
         self.memory = memory
         self.root = None
         self.siteName = None
+        self.oldsiteName = None
+        self.oldNum = None
+        self.newRawName = None
+        self.oldRawName = None
         self.nameOnScreen = tk.StringVar()
         self.serviceNumOnScreen = tk.StringVar()
 
@@ -510,3 +518,106 @@ class EditWindow:
 
     def binder(self):
         self.root.bind("WM_DELETE_WINDOW", self.closeWindow)
+
+    def closeWindow(self):
+        self.root.destroy()
+
+    def loadInName(self):
+        selected = self.mainWin.treeView.selection()[0]
+        item = self.mainWin.treeView.item(selected)
+        
+        if item['values'][0] != "":
+            self.serviceNumOnScreen.set(str(item['values'][0]))
+            self.nameOnScreen.set(str(item['values'][1]))
+            self.oldNum = str(item['values'][0])
+            self.oldRawName = str(item['values'][0])+ "." + str(item['values'][1])
+        else:
+            self.nameOnScreen.set(str(item['values'][1]))
+            self.oldsiteName = str(item['values'][1])
+            self.oldRawName = str(item['values'][1])
+            
+    
+    def saveChanges(self):
+        self.checkData()
+        self.updateMemory()
+        self.updateFolderName()
+        self.updateissueDict()
+        self.updateRawSiteNames()
+        self.mainWin.refreshData()
+        self.closeWindow()
+
+    def updateRawSiteNames(self):
+        self.memory.rawSiteNames.remove(self.oldRawName)
+        self.memory.rawSiteNames.append(self.newRawName)
+
+    def updateissueDict(self):
+        self.memory.issuesDict[self.newRawName] = self.memory.issuesDict[self.oldRawName]
+        del self.memory.issuesDict[self.oldRawName]
+
+    def updateFolderName(self):
+        os.rename(self.configHandle.dataDirPath + '/' + self.oldRawName, self.configHandle.dataDirPath + '/' + self.newRawName)
+            
+    def updateMemory(self):
+        self.siteName = self.nameOnScreen.get()
+        self.serviceNum = self.serviceNumOnScreen.get()
+        
+        if self.serviceNum == "":
+            self.newRawName = self.siteName
+            dbl = False
+        else:
+            self.newRawName = self.serviceNum + "." + self.siteName
+            dbl = True
+
+        if dbl:
+            for i, item in enumerate(self.memory.mainDataList):
+                if item[0] == self.oldNum:
+                    self.memory.mainDataList[i][0] = self.serviceNum
+                    if len(item) == 1:
+                        self.memory.mainDataList[i].append(self.siteName)
+                    else:
+                        self.memory.mainDataList[i][1] = self.siteName
+                    break
+        else:
+            for i, item in enumerate(self.memory.mainDataList):
+                if item[0] == self.oldsiteName:
+                    if self.oldNum != "":
+                        self.memory.mainDataList[i].remove(self.oldNum)
+                        self.memory.mainDataList[i][0] = self.siteName
+                    else:
+                        self.memory.mainDataList[i][0] = self.siteName
+                        self.memory.mainDataList[i].remove(self.oldsiteName)
+                    break
+
+    def checkData(self):
+        if self.nameOnScreen.get() == "":
+            ttk.messagebox.showerror("Błąd", "Nazwa obiektu nie może być pusta.")
+            return
+        if self.charRegex():
+            ttk.messagebox.showerror("Błąd", "Nazwa lub numer zawiera niedozwolone znaki.")
+            return
+        if self.wordRegex():
+            ttk.messagebox.showerror("Błąd", "Nazwa zawiera niedozwolone słowa.")
+            return
+        
+        
+    def charRegex(self):
+        forbiddenChars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*']
+        if any(char in self.nameOnScreen.get() for char in forbiddenChars):
+            print("Forbidden char in name.")
+            return True
+        if not self.serviceNumOnScreen.get().isdigit():
+            print("Service number is not a number.")
+            return True
+        return False
+
+    def wordRegex(self):
+        forbiddenWords = ['CON', 'PRN', 'AUX', 'NUL', 'COM0', 'COM1', 
+                          'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 
+                          'COM8', 'COM9', 'LPT0', 'LPT1', 'LPT2', 'LPT3', 
+                          'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9']
+        for item in forbiddenWords:
+            if item in self.nameOnScreen.get().upper():
+                print("Forbidden word in name.")
+                return True
+        return False    
+
