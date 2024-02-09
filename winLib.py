@@ -1,8 +1,9 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox, filedialog
+from tkinter.messagebox import askyesno
 from tkinter import filedialog
-import os, sys, shutil, time, platform
+import os, sys, shutil, time, platform, subprocess, csv
 
 class MainWin:
     def __init__(self, controler, configHandle, memory):
@@ -92,7 +93,7 @@ class MainWin:
         self.contextMenu = tk.Menu(self.root, tearoff=0)
         self.contextMenu.add_command(label="Edytuj Obiekt", command=self.editSite)
         self.contextMenu.add_command(label="Dodaj Obiekt do Bazy", command=self.addSite)
-        self.contextMenu.add_command(label="Do folderu", command=self.openIssueFolder)    
+        self.contextMenu.add_command(label="Do folderu", command=self.openSiteFolder)    
 
     def drawSearchBar(self):
         self.search_var = tk.StringVar()
@@ -103,7 +104,7 @@ class MainWin:
     # Local methods 
     #---------------------------------------------------------------------------
     def unPostMenu(self, event):
-        self.context_menu.unpost()
+        self.contextMenu.unpost()
 
     def postMenu(self, event):
         try:
@@ -123,10 +124,27 @@ class MainWin:
         editWindow.loadInName()
 
     def addSite(self):
-        pass
+        addWindow = NewSite(self, self.configHandle, self.memory, self.controler)
+        addWindow.buildWindow()
+        addWindow.drawWidgets()
+        addWindow.binder()
 
-    def openIssueFolder(self):
-        pass
+
+    def openSiteFolder(self):
+        selected = self.treeView.selection()[0]
+        item = self.treeView.item(selected)
+        
+        if item['values'][0] == "":
+            rawName = str(item['values'][1])
+        elif item['values'][0] != "":
+            rawName = str(item['values'][0]) + "." + str(item['values'][1])
+
+        os.chdir(self.configHandle.dataDirPath + '/' + rawName)
+        if platform.system() == "Windows":
+            os.startfile(os.getcwd())
+        else:
+            subprocess.run(['xdg-open', os.getcwd()])
+        
 
     # Import requested by button
     def runtimeImport(self):
@@ -202,7 +220,50 @@ class MainWin:
         self.controler.issueWindow.startup()
 
     def makeExcel(self):
-        pass
+        timestamp = str(time.strftime("%Y-%m-%d %H-%M"))
+        rowName = ""
+        rowNum = ""
+        if askyesno("Info", "Czy chcesz wygenerować plik Excel z obecnie widocznych obiektów?"):
+            children = self.treeView.get_children()
+            data = []
+            data.append(["Serwis", "Obiekt"])
+            for child in children:
+                item = self.treeView.item(child)
+                if item['values'][0] == "":
+                    rowName = item['values'][1]
+                    rowNum = ""
+                else:
+                    rowName = item['values'][1]
+                    rowNum = item['values'][0]
+                data.append([rowNum, rowName])
+        else:
+            data = []
+            data.append(["Serwis", "Obiekt"])
+            for item in self.memory.mainDataList:
+                if len(item) == 1:
+                    rowName = item[0]
+                    rowNum = ""
+                else:
+                    rowName = item[1]
+                    rowNum = item[0]
+                data.append([rowNum, rowName])
+
+        if not os.path.exists(self.controler.globalCwd + '/exceldane'):
+            os.mkdir(self.controler.globalCwd + '/exceldane')
+        os.chdir(self.controler.globalCwd + '/exceldane')
+
+        with open(timestamp + ' daneObiektow.csv', 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerows(data)
+            file.close()
+        if platform.system() == "Windows":
+            os.startfile(os.getcwd())
+        else:
+            subprocess.run(['xdg-open', os.getcwd()])
+
+    def refreshWithPresentMemory(self):
+        self.flushTreeView()
+        self.insertDataToTreeView()
 
     def refreshData(self):
         self.flushTreeView()
@@ -310,7 +371,7 @@ class IssueWin:
                 if platform.system() == "Windows":
                     os.startfile(path + '/' + issueName)
                 else:
-                    os.system(f"xdg-open {path}/{issueName}")
+                    subprocess.run(['xdg-open', path + '/' + issueName])
                 
                 break
         os.chdir(self.controler.globalCwd)
@@ -414,7 +475,7 @@ class NewIssueWin:
         res[0] = self.charRegex()
         res[1] = self.wordRegex()
         if True in res:
-            ttk.messagebox.showerror("Błąd", "Nazwa zawiera niedozwolone znaki lub słowa.")
+            messagebox.showerror("Błąd", "Nazwa zawiera niedozwolone znaki lub słowa.")
             return True
         else:
             return False
@@ -534,6 +595,7 @@ class EditWindow:
             self.serviceNumOnScreen.set(str(item['values'][0]))
             self.nameOnScreen.set(str(item['values'][1]))
             self.oldNum = str(item['values'][0])
+            self.oldsiteName = str(item['values'][1])
             self.oldRawName = str(item['values'][0])+ "." + str(item['values'][1])
         else:
             self.nameOnScreen.set(str(item['values'][1]))
@@ -542,12 +604,17 @@ class EditWindow:
             
     
     def saveChanges(self):
-        self.checkData()
+        res = self.checkData()
+        if res == 1:
+            return
+        elif res == 2:
+            self.closeWindow()
+            return
         self.updateMemory()
         self.updateFolderName()
         self.updateissueDict()
         self.updateRawSiteNames()
-        self.mainWin.refreshData()
+        self.mainWin.refreshWithPresentMemory()
         self.closeWindow()
 
     def updateRawSiteNames(self):
@@ -562,8 +629,6 @@ class EditWindow:
         os.rename(self.configHandle.dataDirPath + '/' + self.oldRawName, self.configHandle.dataDirPath + '/' + self.newRawName)
             
     def updateMemory(self):
-        self.siteName = self.nameOnScreen.get()
-        self.serviceNum = self.serviceNumOnScreen.get()
         
         if self.serviceNum == "":
             self.newRawName = self.siteName
@@ -574,34 +639,48 @@ class EditWindow:
 
         if dbl:
             for i, item in enumerate(self.memory.mainDataList):
-                if item[0] == self.oldNum:
+                if item[0] == self.oldsiteName:
                     self.memory.mainDataList[i][0] = self.serviceNum
-                    if len(item) == 1:
-                        self.memory.mainDataList[i].append(self.siteName)
-                    else:
-                        self.memory.mainDataList[i][1] = self.siteName
+                    self.memory.mainDataList[i].append(self.siteName)
+                    print(item)
                     break
+                elif len(item) > 1:
+                    if item[0] == self.oldNum and item[1] == self.oldsiteName:
+                        self.memory.mainDataList[i][0] = self.serviceNum
+                        self.memory.mainDataList[i][1] = self.siteName
+                        print(item)
+                        break
+            
         else:
             for i, item in enumerate(self.memory.mainDataList):
                 if item[0] == self.oldsiteName:
-                    if self.oldNum != "":
-                        self.memory.mainDataList[i].remove(self.oldNum)
-                        self.memory.mainDataList[i][0] = self.siteName
-                    else:
+                    self.memory.mainDataList[i][0] = self.siteName
+                    print(item)
+                    break
+                elif len(item) > 1:
+                    if item[0] == self.oldNum and item[1] == self.oldsiteName:
                         self.memory.mainDataList[i][0] = self.siteName
                         self.memory.mainDataList[i].remove(self.oldsiteName)
-                    break
+                        print(item)
+                        break            
 
     def checkData(self):
         if self.nameOnScreen.get() == "":
-            ttk.messagebox.showerror("Błąd", "Nazwa obiektu nie może być pusta.")
-            return
+            messagebox.showerror("Błąd", "Nazwa obiektu nie może być pusta.")
+            return 1
         if self.charRegex():
-            ttk.messagebox.showerror("Błąd", "Nazwa lub numer zawiera niedozwolone znaki.")
-            return
+            messagebox.showerror("Błąd", "Nazwa lub numer zawiera niedozwolone znaki.")
+            return 1
         if self.wordRegex():
-            ttk.messagebox.showerror("Błąd", "Nazwa zawiera niedozwolone słowa.")
-            return
+            messagebox.showerror("Błąd", "Nazwa zawiera niedozwolone słowa.")
+            return 1
+        
+        self.siteName = self.nameOnScreen.get()
+        self.serviceNum = self.serviceNumOnScreen.get()
+
+        if self.siteName == self.oldsiteName and self.serviceNum == self.oldNum:
+            return 2
+        return 0
         
         
     def charRegex(self):
@@ -624,4 +703,128 @@ class EditWindow:
                 print("Forbidden word in name.")
                 return True
         return False    
+
+class NewSite:
+    def __init__(self, mainWin, configHandle, memory, controler):
+        self.mainWin = mainWin
+        self.configHandle = configHandle
+        self.memory = memory
+        self.root = None
+        self.siteName = tk.StringVar()
+        self.serviceNum = tk.StringVar()
+        self.newRawName = None
+
+    def buildWindow(self):
+        self.root = tk.Toplevel()
+        self.root.title("Dodaj Obiekt")
+        self.root.resizable(False, False)
+        self.root.config(bg="#333333")
+
+    def drawWidgets(self):
+        self.label1 = tk.LabelFrame(self.root, text="Dodaj Obiekt", bg="#333333", 
+                                    fg="#ffffff", font=("Arial", 16, "bold"), bd=5, 
+                                    relief=tk.FLAT)
+        self.label1.pack(side=tk.TOP, fill=tk.X, expand=False, padx=10, pady=10)
+
+        self.label2 = tk.Label(self.label1, text="Nazwa obiektu", bg="#333333",
+                                fg="#ffffff", font=("Arial", 16, "bold"))
+        self.label2.pack(side=tk.TOP, fill=tk.X, expand=True, padx=10, pady=10)
+
+        self.entry1 = tk.Entry(self.label1, bg="#ffffff", fg="#000000", 
+                              font=("Arial", 16, "bold"), bd=5, 
+                              relief=tk.FLAT, textvariable = self.siteName)
+        self.entry1.pack(side=tk.TOP, fill=tk.X, expand=True, padx=10, pady=10)
+
+        self.label3 = tk.Label(self.label1, text="Numer serwisowy", bg="#333333",
+                                fg="#ffffff", font=("Arial", 16, "bold"))
+        self.label3.pack(side=tk.TOP, fill=tk.X, expand=True, padx=10, pady=10)
+
+        self.entry2 = tk.Entry(self.label1, bg="#ffffff", fg="#000000", 
+                              font=("Arial", 16, "bold"), bd=5, 
+                              relief=tk.FLAT, textvariable = self.serviceNum)
+        self.entry2.pack(side=tk.TOP, fill=tk.X, expand=True, padx=10, pady=10)
+
+        self.button1 = tk.Button(self.label1, text="Dodaj", activebackground="red", 
+                                 bg="#993333", fg="#ffffff", font=("Arial", 16, "bold"), 
+                                 bd=5, relief=tk.FLAT, command=self.addSite)
+        self.button1.pack(side=tk.BOTTOM, fill=tk.X, expand=True, padx=10, pady=10)
+
+        self.button2 = tk.Button(self.label1, text="Anuluj", activebackground="red", 
+                                 bg="#993333", fg="#ffffff", font=("Arial", 16, "bold"), 
+                                 bd=5, relief=tk.FLAT, command=self.closeWindow)
+        self.button2.pack(side=tk.BOTTOM, fill=tk.X, expand=True, padx=10, pady=10)
+
+    def binder(self):
+        self.root.bind("WM_DELETE_WINDOW", self.closeWindow)
+
+    def closeWindow(self):
+        self.mainWin.refreshwithPresentMemory()
+        self.root.destroy()
+
+    def addSite(self):
+        res = self.checkData()
+        if res == 1:
+            return
+        self.addToMemory()
+        self.addToTreeView()
+        self.addFolder()
+        self.closeWindow()
+
+    def checkData(self):
+        if self.siteName.get() == "":
+            messagebox.showerror("Błąd", "Nazwa obiektu nie może być pusta.")
+            return 1
+        if self.charRegex():
+            messagebox.showerror("Błąd", "Nazwa lub numer zawiera niedozwolone znaki.")
+            return 1
+        if self.wordRegex():
+            messagebox.showerror("Błąd", "Nazwa zawiera niedozwolone słowa.")
+            return 1
+        return 0
+    
+    def charRegex(self):
+        forbiddenChars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*']
+        if any(char in self.siteName.get() for char in forbiddenChars):
+            print("Forbidden char in name.")
+            return True
+        if not self.serviceNum.get().isdigit():
+            print("Service number is not a number.")
+            return True
+        return False
+    
+    def wordRegex(self):
+        forbiddenWords = ['CON', 'PRN', 'AUX', 'NUL', 'COM0', 'COM1', 
+                          'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 
+                          'COM8', 'COM9', 'LPT0', 'LPT1', 'LPT2', 'LPT3', 
+                          'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9']
+        for item in forbiddenWords:
+            if item in self.siteName.get().upper():
+                print("Forbidden word in name.")
+                return True
+        return False
+    
+    def addToMemory(self):
+        if self.serviceNum.get() == "":
+            self.newRawName = self.siteName.get()
+            self.memory.mainDataList.append([self.siteName.get()])
+            self.memory.rawSiteNames.append(self.siteName.get())
+        else:
+            self.newRawName = self.serviceNum.get() + "." + self.siteName.get()
+            self.memory.mainDataList.append([self.serviceNum.get(), self.siteName.get()])
+            self.memory.rawSiteNames.append(self.serviceNum.get() + "." + self.siteName.get())
+        self.memory.issuesDict[self.newRawName] = []
+
+    def addToTreeView(self):
+        if self.serviceNum.get() == "":
+            self.mainWin.treeView.insert("", "end", text=self.siteName.get(), values=("", self.siteName.get(), "0"))
+        else:
+            self.mainWin.treeView.insert("", "end", text=self.serviceNum.get(), values=(self.serviceNum.get(), self.siteName.get(), "0"))
+
+    def addFolder(self):
+        if not os.path.exists(self.configHandle.dataDirPath + '/' + self.newRawName):
+            os.mkdir(self.configHandle.dataDirPath + '/' + self.newRawName)
+        if not os.path.exists(self.configHandle.dataDirPath + '/' + self.newRawName + '/' + self.configHandle.issueFolderName):
+            os.mkdir(self.configHandle.dataDirPath + '/' + self.newRawName + '/' + self.configHandle.issueFolderName)
+        if not os.path.exists(self.configHandle.dataDirPath + '/' + self.newRawName + '/' + self.configHandle.issueArchiveFolderName):
+            os.mkdir(self.configHandle.dataDirPath + '/' + self.newRawName + '/' + self.configHandle.issueArchiveFolderName)
 

@@ -76,14 +76,12 @@ class Memory:
         
         with open("dataBackup.txt", "w") as backupFile:
             for item in self.rawSiteNames:
-                backupFile.write(f"{item}\n")
-                backupFile.write(f"{self.issuesDict[item]}\n")
+                backupFile.write(f"Obiekt {item}\n")
+                backupFile.write(f"Usterki {self.issuesDict[item]}\n")
         print("Backup created.")
 
     def flushData(self):
         self.mainDataList = []
         self.issuesDict = {}
-
-    def solidifyData(self):
-        pass
+        self.rawSiteNames = []
 
