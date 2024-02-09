@@ -226,7 +226,7 @@ class MainWin:
         if askyesno("Info", "Czy chcesz wygenerować plik Excel z obecnie widocznych obiektów?"):
             children = self.treeView.get_children()
             data = []
-            data.append(["Serwis", "Obiekt"])
+            data.append(["Serwis", "Obiekt", "Kontakt", "Informacje"])
             for child in children:
                 item = self.treeView.item(child)
                 if item['values'][0] == "":
@@ -235,7 +235,7 @@ class MainWin:
                 else:
                     rowName = item['values'][1]
                     rowNum = item['values'][0]
-                data.append([rowNum, rowName])
+                data.append([rowNum, rowName, "",""])
         else:
             data = []
             data.append(["Serwis", "Obiekt"])
@@ -246,7 +246,7 @@ class MainWin:
                 else:
                     rowName = item[1]
                     rowNum = item[0]
-                data.append([rowNum, rowName])
+                data.append([rowNum, rowName,"",""])
 
         if not os.path.exists(self.controler.globalCwd + '/exceldane'):
             os.mkdir(self.controler.globalCwd + '/exceldane')
@@ -606,6 +606,7 @@ class EditWindow:
     def saveChanges(self):
         res = self.checkData()
         if res == 1:
+            self.root.lift()
             return
         elif res == 2:
             self.closeWindow()
@@ -688,9 +689,10 @@ class EditWindow:
         if any(char in self.nameOnScreen.get() for char in forbiddenChars):
             print("Forbidden char in name.")
             return True
-        if not self.serviceNumOnScreen.get().isdigit():
-            print("Service number is not a number.")
-            return True
+        if self.serviceNumOnScreen.get() != "":
+            if not self.serviceNumOnScreen.get().isdigit():
+                print("Service number is not a number.")
+                return True
         return False
 
     def wordRegex(self):
@@ -758,7 +760,7 @@ class NewSite:
         self.root.bind("WM_DELETE_WINDOW", self.closeWindow)
 
     def closeWindow(self):
-        self.mainWin.refreshwithPresentMemory()
+        self.mainWin.refreshWithPresentMemory()
         self.root.destroy()
 
     def addSite(self):
