@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox, filedialog
 from tkinter import filedialog
-import os, sys, shutil, time
+import os, sys, shutil, time, platform
 
 class MainWin:
     def __init__(self, controler, configHandle, memory):
@@ -307,7 +307,11 @@ class IssueWin:
             selected_text = self.listBox.get(selected)
             if selected_text in issue:
                 issueName = issue
-                os.startfile(path + '/' + issueName)
+                if platform.system() == "Windows":
+                    os.startfile(path + '/' + issueName)
+                else:
+                    os.system(f"xdg-open {path}/{issueName}")
+                
                 break
         os.chdir(self.controler.globalCwd)
 
