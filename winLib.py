@@ -444,6 +444,7 @@ class NewIssueWin:
         self.root.bind("WM_DELETE_WINDOW", self.closeWindow)
 
     def startup(self):
+        self.root.focus_set()
         self.root.mainloop()
 
 # Local methods ------------------------------------------------------------
@@ -561,12 +562,12 @@ class EditWindow:
                                     relief=tk.FLAT)
         self.label1.pack(side=tk.TOP, fill=tk.X, expand=False, padx=10, pady=10)
 
-        self.entry1 = tk.Entry(self.label1, bg="#000000", fg="#ffffff", 
+        self.entry1 = tk.Entry(self.label1, bg="#ffffff", fg="#000000", 
                               font=("Arial", 16, "bold"), bd=5, 
                               relief=tk.FLAT, textvariable = self.nameOnScreen)
         self.entry1.pack(side=tk.TOP, fill=tk.X, expand=True, padx=10, pady=10)
 
-        self.entry2 = tk.Entry(self.label1, bg="#000000", fg="#ffffff", 
+        self.entry2 = tk.Entry(self.label1, bg="#ffffff", fg="#000000", 
                               font=("Arial", 16, "bold"), bd=5, 
                               relief=tk.FLAT, textvariable = self.serviceNumOnScreen)
         self.entry2.pack(side=tk.TOP, fill=tk.X, expand=True, padx=10, pady=10)
