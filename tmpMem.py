@@ -35,7 +35,7 @@ class Memory:
                 temp = item
                 tempList.append(temp)
             else:
-                temp = item.split(".")
+                temp = item.split(".", 1)
                 tempList.append(temp[0])
                 tempList.append(temp[1])
             self.mainDataList.append(tempList)
