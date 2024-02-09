@@ -53,6 +53,7 @@ class Memory:
             if not os.path.exists(self.configHandle.dataDirPath + '/' + item + '/' + issuesFolder):
                 os.mkdir(issuesFolder)
                 self.issuesDict[item] = []
+                print(f"Loading issues for {item}")
                 continue
             else:
                 issuesHere = os.listdir(self.configHandle.dataDirPath + '/' + item + '/' + issuesFolder)
@@ -61,6 +62,7 @@ class Memory:
 
             if len(issuesHere) == 0:
                 self.issuesDict[item] = []
+                print(f"Loading issues for {item}")
                 continue
             tempList = []
             
