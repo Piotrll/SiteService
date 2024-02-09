@@ -29,6 +29,7 @@ class Memory:
             if not os.path.isdir(os.path.join(self.configHandle.dataDirPath, item)):
                 continue
             self.rawSiteNames.append(item)
+            
             if not "." in item:
                 tempList.append(item)
             elif item.index(".") > 5:
@@ -47,7 +48,7 @@ class Memory:
     def loadIssues(self):
         os.chdir(self.controler.globalCwd)
 
-        issuesFolder = self.configHandle.configReader.readConfig("DataInfo", "issueFolderName")
+        issuesFolder = self.configHandle.issueFolderName
 
         for i, item in enumerate(self.rawSiteNames):
             if not os.path.exists(self.configHandle.dataDirPath + '/' + item + '/' + issuesFolder):
@@ -65,7 +66,7 @@ class Memory:
                 print(f"Loading issues for {item}")
                 continue
             tempList = []
-            
+
             for issue in issuesHere:
                 if os.path.isfile(path + '/' + issue):
                     tempList.append(issue)
