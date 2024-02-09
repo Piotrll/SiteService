@@ -50,22 +50,25 @@ class Memory:
         issuesFolder = self.configHandle.configReader.readConfig("DataInfo", "issueFolderName")
 
         for i, item in enumerate(self.rawSiteNames):
-
-
-            os.chdir(self.configHandle.dataDirPath + '/' + item)
-            if not os.path.exists(issuesFolder):
+            if not os.path.exists(self.configHandle.dataDirPath + '/' + item + '/' + issuesFolder):
                 os.mkdir(issuesFolder)
-
-            os.chdir(self.configHandle.dataDirPath + '/' + item )
-            issuesHere = os.listdir(self.configHandle.dataDirPath + '/' + item + '/' + issuesFolder)
+                self.issuesDict[item] = []
+                continue
+            else:
+                issuesHere = os.listdir(self.configHandle.dataDirPath + '/' + item + '/' + issuesFolder)
             path = self.configHandle.dataDirPath + '/' + item + '/' + issuesFolder
+            
+
+            if len(issuesHere) == 0:
+                self.issuesDict[item] = []
+                continue
             tempList = []
+            
             for issue in issuesHere:
                 if os.path.isfile(path + '/' + issue):
                     tempList.append(issue)
             self.issuesDict[item] = tempList
             print(f"Loading issues for {item} - {tempList}")
-            os.chdir(self.controler.globalCwd)
         print("Issues loaded.")
 
     def solidifyData(self):
