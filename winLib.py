@@ -144,6 +144,8 @@ class MainWin:
             os.startfile(os.getcwd())
         else:
             subprocess.run(['xdg-open', os.getcwd()])
+
+        os.chdir(self.controler.globalCwd)
         
 
     # Import requested by button
@@ -362,14 +364,14 @@ class IssueWin:
 
     def toIssue(self, event):
         os.chdir(self.configHandle.dataDirPath + '/' + self.siteName + '/' + self.configHandle.issueFolderName)
-        path = str(os.getcwd()).replace("\\", "/")
+        path = str(os.getcwd())
         selected = self.listBox.curselection()[0]
         for issue in self.memory.issuesDict[self.siteName]:
             selected_text = self.listBox.get(selected)
             if selected_text in issue:
                 issueName = issue
                 if platform.system() == "Windows":
-                    os.startfile(path + '/' + issueName)
+                    os.startfile(path + '\\' + issueName)
                 else:
                     subprocess.run(['xdg-open', path + '/' + issueName])
                 
