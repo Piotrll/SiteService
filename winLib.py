@@ -711,6 +711,7 @@ class NewSite:
         self.mainWin = mainWin
         self.configHandle = configHandle
         self.memory = memory
+        self.controler = controler
         self.root = None
         self.siteName = tk.StringVar()
         self.serviceNum = tk.StringVar()
@@ -770,7 +771,15 @@ class NewSite:
         self.addToMemory()
         self.addToTreeView()
         self.addFolder()
+        self.openSiteFolder()
         self.closeWindow()
+
+    def openSiteFolder(self):
+        dataDirPath = self.configHandle.dataDirPath
+        if platform.system() == "Windows":
+            os.startfile(dataDirPath + '/' + self.newRawName)
+        else:
+            subprocess.run(['xdg-open', dataDirPath + '/' + self.newRawName])
 
     def checkData(self):
         if self.siteName.get() == "":

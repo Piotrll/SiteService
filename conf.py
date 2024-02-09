@@ -28,8 +28,8 @@ class ConfigHandle:
                 return False
         if self.noConfigData:
             winLib.askInitImport(self, self.controler)
-        else:
-            self.loadDataDirectory()
+        self.loadDataDirectory()
+        self.noConfigData = False
         print("Configuration startup sequence completed.")
         return True
     
