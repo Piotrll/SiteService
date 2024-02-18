@@ -52,7 +52,7 @@ class Memory:
 
         for i, item in enumerate(self.rawSiteNames):
             if not os.path.exists(self.configHandle.dataDirPath + '/' + item + '/' + issuesFolder):
-                os.mkdir(issuesFolder)
+                os.mkdir(self.configHandle.dataDirPath + '/' + item + '/' + issuesFolder)
                 self.issuesDict[item] = []
                 print(f"Loading issues for {item}")
                 continue
