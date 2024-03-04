@@ -116,6 +116,9 @@ class Controler:
         self.ErrorBuffer.close()
         os.chdir(self.globalCwd)
 
+    def applyChanges(self, object):
+        pass
+    
 if __name__ == "__main__":
     controler = Controler()
     
