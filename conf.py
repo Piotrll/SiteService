@@ -92,26 +92,23 @@ class cChecker:
     def initCheck(self): # returns 0 if config exists, 1 if config exist but have no data, 2 if config was created, 3 if error
 
         os.chdir(self.configHandle.controler.globalCwd)
-        if os.path.exists("config"):
-            print("Config directory exists.")
-            if not os.path.exists(self.configHandle.configReader.readConfig("DataInfo", "dataPath")):
-                print("Data directory does not exist.")
-                return 1
-            return 0
-        else:
+        if not os.path.exists("config"):
             print("Config directory does not exist.")
             os.mkdir("config")
             print("Config directory created.")
         os.chdir("config")
-        if os.path.exists("config.ini"):
-            print("Config file exists.")
-        else:
+        if not os.path.exists("config.ini"):
             print("Config file does not exist.")
             self.res = self.configHandle.configWriter.writeInitConfig()
             if self.res:
                 print("Config file created.")
+                return 2
             else:
                 print("Error creating config file.")
                 return 3
-            print("Config file created.")
-        return 2
+            
+        if not os.path.exists(self.configHandle.configReader.readConfig("DataInfo", "dataPath")):
+            print("Data directory does not exist.")
+            return 1
+        return 0
+        
